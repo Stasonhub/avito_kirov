@@ -92,7 +92,9 @@ for page in range(1, 101):
 
     print('page %d' % page)
 
-    doc = parse_page('https://www.avito.ru/kirovskaya_oblast_kirov/kvartiry/prodam?p=' + str(page))
+    url = 'https://www.avito.ru/kirovskaya_oblast_kirov/kvartiry/prodam/vtorichka'
+    # doc = parse_page('https://www.avito.ru/kirovskaya_oblast_kirov/kvartiry/prodam?p=' + str(page))
+    doc = parse_page(url + '?p=' + str(page))
 
     links = doc.select('a.item-description-title-link')
     shuffle(links)

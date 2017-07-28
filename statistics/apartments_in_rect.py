@@ -2,7 +2,9 @@
 # поиск квартир в заданном квадрате
 import sqlite3
 import numpy as np
+from collections import namedtuple
 import pyperclip
+
 
 def load_data_from_db():
     connection = sqlite3.connect('../avito.db')
@@ -23,13 +25,21 @@ def filter_by_coordinates(data, left_top_coordinates, right_bottom_coordinates):
         item[4] <= right_bottom_coordinates[1]])
 
 
+Apartment = namedtuple(\
+    'Apartment', ['area', 'floor', 'floors', 'price', 'address', 'url'])
+
 def select_by_id(id):
     connection = sqlite3.connect('../avito.db')
     cursor = connection.cursor()
     cursor.execute(\
         'select url, area, price, floor, floors, address\
         from adverts where id=%d' % id)
-    return cursor.fetchall()[0]
+
+    data = cursor.fetchall()[0]
+    apartment = Apartment(url=data[0], area=data[1], price=data[2],\
+        floor=data[3], floors=data[4], address=data[5])
+    
+    return apartment
 
 
 if __name__ == '__main__':
@@ -64,13 +74,17 @@ if __name__ == '__main__':
     # вывод найденных квартир на экран
     for id in ids[number:]:
 
-        data = select_by_id(id)
-        print('%3d. Площадь: %d, цена: %d (%d), этаж: %d/%d, адрес: %s' %\
-            (number, data[1], data[2] / data[1],\
-            data[2], data[3], data[4], data[5]), end='')
+        apt = select_by_id(id)
+
+        meter_price = apt.price / apt.area
+        diff_percent = 100 * (meter_price / square_meter_mean - 1)
+
+        print('%3d. Площадь: %d, цена: %d [%+.1f%%] (%.3f млн.), этаж: %d/%d, адрес: %s' %\
+            (number, apt.area, meter_price, diff_percent, apt.price / 1000000,\
+            apt.floor, apt.floors, apt.address), end='')
         
         # ссылка на квартиру - в буфер обмена
-        pyperclip.copy(data[0])
+        pyperclip.copy(apt.url)
         input('')
 
         number += 1
