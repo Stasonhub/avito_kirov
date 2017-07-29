@@ -44,10 +44,10 @@ def feature(doc, type):
         features[item[0]] = item[1]
     return features[type]
 
-def create_db():
+def create_db(db_name):
     with open('avito_sqlite_create.sql', 'r') as script:
         sql = script.read()
-    conn = sqlite3.connect('avito.db')
+    conn = sqlite3.connect(db_name)
     c = conn.cursor()
     c.executescript(sql)
     conn.commit()
@@ -83,8 +83,14 @@ def add_advert(connection, ad_id, rooms, area, floor, floors, price, address, co
         % (ad_id, rooms, area, floor, floors, price, address, comment, url, lat, lon))
     connection.commit()
 
+avito_url = 'https://www.avito.ru/kirovskaya_oblast_kirov/kvartiry/'
+postfix = ['sdam/na_dlitelnyy_srok', 'prodam/vtorichka', 'prodam/novostroyka']
+
+choice = int(input('Выбор: сдам = 0, вторичка = 1, новостройка = 2: '))
+db_name = postfix[choice].replace('/', '_') + '.db'
+
 # подключение к БД
-connection = create_db()
+connection = create_db(db_name)
 
 all_links = []
 
@@ -92,9 +98,7 @@ for page in range(1, 101):
 
     print('page %d' % page)
 
-    url = 'https://www.avito.ru/kirovskaya_oblast_kirov/kvartiry/prodam/vtorichka'
-    # doc = parse_page('https://www.avito.ru/kirovskaya_oblast_kirov/kvartiry/prodam?p=' + str(page))
-    doc = parse_page(url + '?p=' + str(page))
+    doc = parse_page(avito_url + postfix[choice] + '?p=' + str(page))
 
     links = doc.select('a.item-description-title-link')
     shuffle(links)

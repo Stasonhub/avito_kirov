@@ -3,11 +3,12 @@
 import sqlite3
 import numpy as np
 from collections import namedtuple
+import matplotlib.pyplot as plt
 import pyperclip
 
 
-def load_data_from_db():
-    connection = sqlite3.connect('../avito.db')
+def load_data_from_db(db_name):
+    connection = sqlite3.connect('../' + db_name)
     cursor = connection.cursor()
     cursor.execute('''
         select id, area, price, lat, lon
@@ -28,8 +29,8 @@ def filter_by_coordinates(data, left_top_coordinates, right_bottom_coordinates):
 Apartment = namedtuple(\
     'Apartment', ['area', 'floor', 'floors', 'price', 'address', 'url'])
 
-def select_by_id(id):
-    connection = sqlite3.connect('../avito.db')
+def select_by_id(db_name, id):
+    connection = sqlite3.connect('../' + db_name)
     cursor = connection.cursor()
     cursor.execute(\
         'select url, area, price, floor, floors, address\
@@ -44,7 +45,11 @@ def select_by_id(id):
 
 if __name__ == '__main__':
 
-    data = load_data_from_db()
+    postfix = ['sdam/na_dlitelnyy_srok', 'prodam/vtorichka', 'prodam/novostroyka']
+    choice = int(input('Выбор: сдам = 0, вторичка = 1, новостройка = 2: '))
+    db_name = postfix[choice].replace('/', '_') + '.db'
+
+    data = load_data_from_db(db_name)
     print('Загружено квартир: %d' % len(data))
 
     # ввод координат интересующего квадрата
@@ -57,6 +62,11 @@ if __name__ == '__main__':
     data = filter_by_coordinates(\
         data, left_top_coordinates, right_bottom_coordinates)
     print('Квартир после фильтрации по координатам: %d' % len(data))
+
+    # гистограмма стоимости за квадратный метр
+    plt.hist(data[:,2] / data[:,1], bins=30)
+    plt.grid()
+    plt.show()
 
     # вычисление средней стоимости метра в указанном квадрате
     square_meter_mean = np.mean(data[:,2] / data[:,1])
@@ -74,7 +84,7 @@ if __name__ == '__main__':
     # вывод найденных квартир на экран
     for id in ids[number:]:
 
-        apt = select_by_id(id)
+        apt = select_by_id(db_name, id)
 
         meter_price = apt.price / apt.area
         diff_percent = 100 * (meter_price / square_meter_mean - 1)
