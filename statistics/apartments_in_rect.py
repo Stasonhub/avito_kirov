@@ -1,6 +1,7 @@
 # coding: utf-8
 # поиск квартир в заданном квадрате
 import sqlite3
+import os.path
 import numpy as np
 from collections import namedtuple
 import matplotlib.pyplot as plt
@@ -43,6 +44,16 @@ def select_by_id(db_name, id):
     return apartment
 
 
+def get_visited_links():
+    visited_links = []
+    fname = 'visited_links.txt'
+    if os.path.isfile(fname):
+        with open(fname) as f:
+            content = f.readlines()
+        visited_links = [x.strip() for x in content]
+    return visited_links
+
+
 if __name__ == '__main__':
 
     postfix = ['sdam/na_dlitelnyy_srok', 'prodam/vtorichka', 'prodam/novostroyka']
@@ -81,20 +92,28 @@ if __name__ == '__main__':
 
     number = int(input('Перейти к объявлению №'))
 
+    visited_links = get_visited_links()
+
     # вывод найденных квартир на экран
     for id in ids[number:]:
 
         apt = select_by_id(db_name, id)
 
-        meter_price = apt.price / apt.area
-        diff_percent = 100 * (meter_price / square_meter_mean - 1)
+        if not apt.url in visited_links:
 
-        print('%3d. Площадь: %d, цена: %d [%+.1f%%] (%.3f млн.), этаж: %d/%d, адрес: %s' %\
-            (number, apt.area, meter_price, diff_percent, apt.price / 1000000,\
-            apt.floor, apt.floors, apt.address), end='')
-        
-        # ссылка на квартиру - в буфер обмена
-        pyperclip.copy(apt.url)
-        input('')
+            meter_price = apt.price / apt.area
+            diff_percent = 100 * (meter_price / square_meter_mean - 1)
+
+            print('%3d. Площадь: %d, цена: %d [%+.1f%%] (%.3f млн.), этаж: %d/%d, адрес: %s' %\
+                (number, apt.area, meter_price, diff_percent, apt.price / 1000000,\
+                apt.floor, apt.floors, apt.address), end='')
+            
+            # ссылка на квартиру - в буфер обмена
+            pyperclip.copy(apt.url)
+            input('')
+
+            # вносим ссылку в список посещённых, чтобы не показывать больше
+            with open('visited_links.txt', 'a') as f:
+                f.write(apt.url + '\n')
 
         number += 1
